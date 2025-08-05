@@ -23,6 +23,13 @@ env/
 .history
 Thumbs.db
 
+# Backup and temporary files
+*.bak
+*.backup
+*.old
+*.tmp
+*~
+
 # Node.js (Frontend)
 frontend/node_modules/
 frontend/build/

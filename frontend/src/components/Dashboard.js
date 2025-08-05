@@ -495,7 +495,7 @@ function Dashboard() {
                               {t('dashboard.updated')} {formatDate(prompt.updated_at)}
                             </Typography>
                             <Typography variant="caption" color="text.secondary" display="block">
-                              {t('dashboard.version')} {prompt.latest_version?.version_number || 1}
+                              {t('dashboard.version')} {prompt.version_count || 1}
                             </Typography>
                           </Box>
                         </CardContent>
@@ -654,7 +654,7 @@ function Dashboard() {
                               {t('dashboard.updated')} {formatDate(prompt.updated_at)}
                             </Typography>
                             <Typography variant="caption" color="text.secondary" display="block">
-                              {t('dashboard.version')} {prompt.latest_version?.version_number || 1}
+                              {t('dashboard.version')} {prompt.version_count || 1}
                             </Typography>
                             <Chip
                               icon={prompt.sharing_mode === 'team' ? <ShareIcon fontSize="small" /> : <LockIcon fontSize="small" />}

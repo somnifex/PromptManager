@@ -11,17 +11,33 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# 初始化 environ
+env = environ.Env(
+    # 设置默认值
+    DEBUG=(bool, False),
+    EMAIL_HOST=(str, ''),
+    EMAIL_PORT=(int, 587),
+    EMAIL_USE_TLS=(bool, True),
+    EMAIL_USE_SSL=(bool, False),
+    EMAIL_HOST_USER=(str, ''),
+    EMAIL_HOST_PASSWORD=(str, ''),
+    DEFAULT_FROM_EMAIL=(str, 'webmaster@localhost'),
+)
+
+# 读取 .env 文件
+environ.Env.read_env(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# 使用环境变量或从安全位置读取SECRET_KEY
-import os
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-c#+s@rrnx%8s#2e8nlf#+c)8d=5eb09#tvklj^0pk(6q+t&cd4')
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -36,7 +52,7 @@ CORS_ALLOWED_ORIGINS = [
 
 # 增强安全配置
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = False  # 生产环境中应为False
+CORS_ALLOW_ALL_ORIGINS = False
 
 # 安全头设置
 SECURE_BROWSER_XSS_FILTER = True
@@ -160,3 +176,17 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Email configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = env('EMAIL_HOST')
+EMAIL_PORT = env.int('EMAIL_PORT')
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS')
+EMAIL_USE_SSL = env.bool('EMAIL_USE_SSL')
+EMAIL_HOST_USER = env('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
+
+# 如果没有配置邮件服务器，使用控制台后端
+if not EMAIL_HOST or not EMAIL_HOST_USER:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

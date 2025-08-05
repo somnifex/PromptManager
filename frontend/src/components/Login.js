@@ -21,6 +21,10 @@ import {
   Link,
   Stack,
   useTheme,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   Visibility,
@@ -28,7 +32,10 @@ import {
   Language as LanguageIcon,
   Login as LoginIcon,
   PersonAdd as RegisterIcon,
+  VpnKey as TwoFactorIcon,
 } from '@mui/icons-material';
+import api from '../api';
+import { setCredentials } from '../slices/authSlice';
 
 function Login() {
   const [activeTab, setActiveTab] = useState(0);
@@ -42,6 +49,13 @@ function Login() {
     confirmPassword: '',
     role: 'user' 
   });
+  const [twoFactorRequired, setTwoFactorRequired] = useState(false);
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [userId, setUserId] = useState(null);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+  const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -56,10 +70,32 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      await dispatch(login(loginForm)).unwrap();
-      navigate('/');
+      const response = await api.post('/users/login/', loginForm);
+      if (response.data.two_factor_required) {
+        setTwoFactorRequired(true);
+        setUserId(response.data.user_id);
+      } else {
+        dispatch(setCredentials(response.data));
+        navigate('/');
+      }
     } catch (err) {
       console.error('Login failed:', err);
+      // 这里可以处理登录失败的UI反馈
+    }
+  };
+
+  const handleTwoFactorSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await api.post('/users/two-factor/verify/', {
+        user_id: userId,
+        code: twoFactorCode,
+      });
+      dispatch(setCredentials(response.data));
+      navigate('/');
+    } catch (err) {
+      console.error('2FA verification failed:', err);
+      // 这里可以处理2FA验证失败的UI反馈
     }
   };
 
@@ -78,6 +114,28 @@ function Login() {
       navigate('/');
     } catch (err) {
       console.error('Registration failed:', err);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!forgotPasswordEmail) {
+      setForgotPasswordMessage('请输入邮箱地址');
+      return;
+    }
+
+    setForgotPasswordLoading(true);
+    setForgotPasswordMessage('');
+
+    try {
+      await api.post('/users/forgot-password/', {
+        email: forgotPasswordEmail
+      });
+      setForgotPasswordMessage('重置密码链接已发送到您的邮箱');
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.response?.data?.detail || '发送失败，请重试';
+      setForgotPasswordMessage(errorMessage);
+    } finally {
+      setForgotPasswordLoading(false);
     }
   };
 
@@ -102,425 +160,376 @@ function Login() {
           left: 0,
           right: 0,
           bottom: 0,
-          opacity: 0.1,
-          background: 'url("data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><defs><pattern id=\'grid\' width=\'10\' height=\'10\' patternUnits=\'userSpaceOnUse\'><path d=\'M 10 0 L 0 0 0 10\' fill=\'none\' stroke=\'%23000\' stroke-width=\'0.5\'/></pattern></defs><rect width=\'100\' height=\'100\' fill=\'url(%23grid)\'/></svg>") repeat',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            width: '200px',
+            height: '200px',
+            borderRadius: '50%',
+            background: 'rgba(14, 165, 233, 0.2)',
+            filter: 'blur(100px)',
+            top: '10%',
+            left: '10%',
+            animation: 'float 8s ease-in-out infinite',
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            width: '300px',
+            height: '300px',
+            borderRadius: '50%',
+            background: 'rgba(139, 92, 246, 0.2)',
+            filter: 'blur(120px)',
+            bottom: '10%',
+            right: '10%',
+            animation: 'float 12s ease-in-out infinite alternate',
+          },
+          '@keyframes float': {
+            '0%': { transform: 'translate(0, 0)' },
+            '50%': { transform: 'translate(30px, 40px)' },
+            '100%': { transform: 'translate(0, 0)' },
+          },
         }}
       />
-
-      {/* Language Switcher */}
-      <Box sx={{ position: 'absolute', top: 20, right: 20, zIndex: 1000 }}>
-        <Stack direction="row" spacing={1}>
-          <IconButton
-            onClick={() => changeLanguage('en')}
-            color={i18n.language === 'en' ? 'primary' : 'default'}
-            sx={{ 
-              borderRadius: '8px',
-              backgroundColor: i18n.language === 'en' ? 'primary.main' : 'transparent',
-              color: i18n.language === 'en' ? 'white' : 'text.primary',
-              '&:hover': {
-                backgroundColor: i18n.language === 'en' ? 'primary.dark' : 'action.hover',
-              }
-            }}
-          >
-            EN
-          </IconButton>
-          <IconButton
-            onClick={() => changeLanguage('zh')}
-            color={i18n.language === 'zh' ? 'primary' : 'default'}
-            sx={{ 
-              borderRadius: '8px',
-              backgroundColor: i18n.language === 'zh' ? 'primary.main' : 'transparent',
-              color: i18n.language === 'zh' ? 'white' : 'text.primary',
-              '&:hover': {
-                backgroundColor: i18n.language === 'zh' ? 'primary.dark' : 'action.hover',
-              }
-            }}
-          >
-            中
-          </IconButton>
-        </Stack>
-      </Box>
-
-      <Container component="main" maxWidth="sm" sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+      
+      <Container
+        component="main"
+        maxWidth="xs"
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          flexGrow: 1,
+          zIndex: 1,
+        }}
+      >
         <motion.div
-          initial={{ opacity: 0, y: 50 }}
+          initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          style={{ width: '100%' }}
+          transition={{ duration: 0.7 }}
         >
-          <Paper 
-            elevation={0} 
-            sx={{ 
-              padding: { xs: 3, sm: 6 },
-              borderRadius: '24px',
-              background: theme.palette.mode === 'dark' 
-                ? 'rgba(30, 41, 59, 0.8)' 
-                : 'rgba(255, 255, 255, 0.9)',
+          <Paper
+            elevation={12}
+            sx={{
+              p: { xs: 3, sm: 4 },
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              borderRadius: '20px',
+              background: 'rgba(255, 255, 255, 0.1)',
               backdropFilter: 'blur(20px)',
-              border: `1px solid ${theme.palette.divider}`,
-              boxShadow: theme.palette.mode === 'dark'
-                ? '0 20px 40px rgba(0, 0, 0, 0.3)'
-                : '0 20px 40px rgba(0, 0, 0, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
             }}
           >
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              <Box sx={{ textAlign: 'center', mb: 4 }}>
-                <Typography 
-                  component="h1" 
-                  variant="h3" 
-                  sx={{ 
-                    fontWeight: 700,
-                    background: 'linear-gradient(45deg, #0ea5e9, #8b5cf6)',
-                    backgroundClip: 'text',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    mb: 1,
-                  }}
-                >
-                  {t('nav.title')}
-                </Typography>
-                <Typography 
-                  variant="h5" 
-                  sx={{ 
-                    fontWeight: 600,
-                    color: 'text.primary',
-                    mb: 1,
-                  }}
-                >
-                  {activeTab === 0 ? t('auth.loginTitle') : t('auth.registerTitle')}
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                  {activeTab === 0 ? t('auth.loginSubtitle') : t('auth.registerSubtitle')}
-                </Typography>
-              </Box>
-            </motion.div>
-            
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-            >
-              <Tabs 
-                value={activeTab} 
-                onChange={(e, newValue) => setActiveTab(newValue)} 
-                sx={{ 
-                  mb: 4,
-                  '& .MuiTabs-flexContainer': {
-                    justifyContent: 'center',
-                  },
-                  '& .MuiTab-root': {
-                    borderRadius: '12px',
-                    mx: 1,
-                    minWidth: 120,
-                    fontWeight: 600,
-                  }
-                }}
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+              <img src="/logo.svg" alt="PromptManager Logo" style={{ height: 40, marginRight: 12 }} />
+              <Typography component="h1" variant="h4" sx={{ fontWeight: 700 }}>
+                {t('nav.title')}
+              </Typography>
+            </Box>
+
+            {error && (
+              <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
+                {typeof error === 'string' ? error : JSON.stringify(error)}
+              </Alert>
+            )}
+
+            {twoFactorRequired ? (
+              <motion.div
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5 }}
               >
-                <Tab 
-                  label={t('auth.login')} 
-                  icon={<LoginIcon />} 
-                  iconPosition="start"
-                />
-                <Tab 
-                  label={t('auth.register')} 
-                  icon={<RegisterIcon />} 
-                  iconPosition="start"
-                />
-              </Tabs>
-
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Alert 
-                    severity="error" 
-                    sx={{ 
-                      mb: 3,
-                      borderRadius: '12px',
+                <Box component="form" onSubmit={handleTwoFactorSubmit} sx={{ width: '100%' }}>
+                  <Typography variant="h6" sx={{ mb: 2, textAlign: 'center' }}>
+                    {t('auth.2faTitle')}
+                  </Typography>
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    name="twoFactorCode"
+                    label={t('auth.2faCode')}
+                    type="text"
+                    id="twoFactorCode"
+                    autoComplete="one-time-code"
+                    value={twoFactorCode}
+                    onChange={(e) => setTwoFactorCode(e.target.value)}
+                    autoFocus
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <TwoFactorIcon />
+                        </InputAdornment>
+                      ),
                     }}
+                  />
+                  <Button
+                    type="submit"
+                    fullWidth
+                    variant="contained"
+                    sx={{ mt: 3, mb: 2, borderRadius: '12px', py: 1.5 }}
+                    disabled={isLoading}
                   >
-                    {error}
-                  </Alert>
-                </motion.div>
-              )}
+                    {isLoading ? <CircularProgress size={24} /> : t('auth.verify')}
+                  </Button>
+                </Box>
+              </motion.div>
+            ) : (
+              <>
+                <Tabs
+                  value={activeTab}
+                  onChange={(e, newValue) => setActiveTab(newValue)}
+                  indicatorColor="primary"
+                  textColor="primary"
+                  variant="fullWidth"
+                  sx={{ mb: 3 }}
+                >
+                  <Tab icon={<LoginIcon />} iconPosition="start" label={t('auth.loginTab')} />
+                  <Tab icon={<RegisterIcon />} iconPosition="start" label={t('auth.registerTab')} />
+                </Tabs>
 
-              {activeTab === 0 ? (
-                <motion.div
-                  key="login"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Box component="form" onSubmit={handleLogin}>
-                    <TextField
-                      margin="normal"
-                      required
-                      fullWidth
-                      id="username"
-                      label={t('auth.username')}
-                      name="username"
-                      autoComplete="username"
-                      autoFocus
-                      value={loginForm.username}
-                      onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
-                      sx={{
-                        mb: 2,
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: '12px',
-                        }
-                      }}
-                    />
-                    <TextField
-                      margin="normal"
-                      required
-                      fullWidth
-                      name="password"
-                      label={t('auth.password')}
-                      type={showPassword ? 'text' : 'password'}
-                      id="password"
-                      autoComplete="current-password"
-                      value={loginForm.password}
-                      onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                      InputProps={{
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <IconButton
-                              onClick={() => setShowPassword(!showPassword)}
-                              edge="end"
-                            >
-                              {showPassword ? <VisibilityOff /> : <Visibility />}
-                            </IconButton>
-                          </InputAdornment>
-                        ),
-                      }}
-                      sx={{
-                        mb: 3,
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: '12px',
-                        }
-                      }}
-                    />
-                    
-                    <motion.div
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
+                {activeTab === 0 && (
+                  <motion.div
+                    key="login"
+                    initial={{ opacity: 0, x: -50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.5 }}
+                    style={{ width: '100%' }}
+                  >
+                    <Box component="form" onSubmit={handleLogin} noValidate>
+                      <TextField
+                        margin="normal"
+                        required
+                        fullWidth
+                        id="login-username"
+                        label={t('auth.username')}
+                        name="username"
+                        autoComplete="username"
+                        autoFocus
+                        value={loginForm.username}
+                        onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
+                      />
+                      <TextField
+                        margin="normal"
+                        required
+                        fullWidth
+                        name="password"
+                        label={t('auth.password')}
+                        type={showPassword ? 'text' : 'password'}
+                        id="login-password"
+                        autoComplete="current-password"
+                        value={loginForm.password}
+                        onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                aria-label="toggle password visibility"
+                                onClick={() => setShowPassword(!showPassword)}
+                                edge="end"
+                              >
+                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
                       <Button
                         type="submit"
                         fullWidth
                         variant="contained"
-                        size="large"
+                        sx={{ mt: 3, mb: 2, borderRadius: '12px', py: 1.5 }}
                         disabled={isLoading}
-                        sx={{ 
-                          mt: 2, 
-                          mb: 3,
-                          borderRadius: '12px',
-                          py: 1.5,
-                          fontSize: '1.1rem',
-                          fontWeight: 600,
-                        }}
                       >
-                        {isLoading ? <CircularProgress size={24} color="inherit" /> : t('auth.loginButton')}
+                        {isLoading ? <CircularProgress size={24} /> : t('auth.loginButton')}
                       </Button>
-                    </motion.div>
-                    
-                    <Box sx={{ textAlign: 'center' }}>
-                      <Link
-                        component="button"
-                        variant="body2"
-                        onClick={() => setActiveTab(1)}
-                        sx={{ 
-                          textDecoration: 'none',
-                          '&:hover': { textDecoration: 'underline' }
-                        }}
+                      <Link 
+                        href="#" 
+                        variant="body2" 
+                        sx={{ display: 'block', textAlign: 'right', cursor: 'pointer' }}
+                        onClick={() => setShowForgotPassword(true)}
                       >
-                        {t('auth.switchToRegister')}
+                        {t('auth.forgotPassword')}
                       </Link>
                     </Box>
-                  </Box>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="register"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Box component="form" onSubmit={handleRegister}>
-                    <TextField
-                      margin="normal"
-                      required
-                      fullWidth
-                      id="username"
-                      label={t('auth.username')}
-                      name="username"
-                      autoComplete="username"
-                      autoFocus
-                      value={registerForm.username}
-                      onChange={(e) => setRegisterForm({ ...registerForm, username: e.target.value })}
-                      sx={{
-                        mb: 2,
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: '12px',
-                        }
-                      }}
-                    />
-                    <TextField
-                      margin="normal"
-                      required
-                      fullWidth
-                      id="email"
-                      label={t('auth.email')}
-                      name="email"
-                      autoComplete="email"
-                      value={registerForm.email}
-                      onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
-                      sx={{
-                        mb: 2,
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: '12px',
-                        }
-                      }}
-                    />
-                    <TextField
-                      margin="normal"
-                      required
-                      fullWidth
-                      name="password"
-                      label={t('auth.password')}
-                      type={showPassword ? 'text' : 'password'}
-                      id="password"
-                      autoComplete="new-password"
-                      value={registerForm.password}
-                      onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
-                      InputProps={{
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <IconButton
-                              onClick={() => setShowPassword(!showPassword)}
-                              edge="end"
-                            >
-                              {showPassword ? <VisibilityOff /> : <Visibility />}
-                            </IconButton>
-                          </InputAdornment>
-                        ),
-                      }}
-                      sx={{
-                        mb: 2,
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: '12px',
-                        }
-                      }}
-                    />
-                    <TextField
-                      margin="normal"
-                      required
-                      fullWidth
-                      name="confirmPassword"
-                      label={t('auth.confirmPassword')}
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      id="confirmPassword"
-                      autoComplete="new-password"
-                      value={registerForm.confirmPassword}
-                      onChange={(e) => setRegisterForm({ ...registerForm, confirmPassword: e.target.value })}
-                      error={registerForm.password && registerForm.confirmPassword && registerForm.password !== registerForm.confirmPassword}
-                      helperText={
-                        registerForm.password && registerForm.confirmPassword && registerForm.password !== registerForm.confirmPassword
-                          ? t('auth.passwordMismatch')
-                          : ''
-                      }
-                      InputProps={{
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <IconButton
-                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                              edge="end"
-                            >
-                              {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                            </IconButton>
-                          </InputAdornment>
-                        ),
-                      }}
-                      sx={{
-                        mb: 2,
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: '12px',
-                        }
-                      }}
-                    />
-                    <TextField
-                      margin="normal"
-                      required
-                      fullWidth
-                      select
-                      name="role"
-                      label={t('auth.role')}
-                      id="role"
-                      value={registerForm.role}
-                      onChange={(e) => setRegisterForm({ ...registerForm, role: e.target.value })}
-                      SelectProps={{ native: true }}
-                      sx={{
-                        mb: 3,
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: '12px',
-                        }
-                      }}
-                    >
-                      <option value="user">User</option>
-                      <option value="admin">Admin</option>
-                    </TextField>
-                    
-                    <motion.div
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
+                  </motion.div>
+                )}
+
+                {activeTab === 1 && (
+                  <motion.div
+                    key="register"
+                    initial={{ opacity: 0, x: 50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.5 }}
+                    style={{ width: '100%' }}
+                  >
+                    <Box component="form" onSubmit={handleRegister} noValidate>
+                      <TextField
+                        margin="normal"
+                        required
+                        fullWidth
+                        id="register-username"
+                        label={t('auth.username')}
+                        name="username"
+                        autoComplete="username"
+                        value={registerForm.username}
+                        onChange={(e) => setRegisterForm({ ...registerForm, username: e.target.value })}
+                      />
+                      <TextField
+                        margin="normal"
+                        required
+                        fullWidth
+                        id="register-email"
+                        label={t('auth.email')}
+                        name="email"
+                        autoComplete="email"
+                        value={registerForm.email}
+                        onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
+                      />
+                      <TextField
+                        margin="normal"
+                        required
+                        fullWidth
+                        name="password"
+                        label={t('auth.password')}
+                        type={showPassword ? 'text' : 'password'}
+                        id="register-password"
+                        autoComplete="new-password"
+                        value={registerForm.password}
+                        onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                aria-label="toggle password visibility"
+                                onClick={() => setShowPassword(!showPassword)}
+                                edge="end"
+                              >
+                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                      <TextField
+                        margin="normal"
+                        required
+                        fullWidth
+                        name="confirmPassword"
+                        label={t('auth.confirmPassword')}
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        id="confirm-password"
+                        autoComplete="new-password"
+                        value={registerForm.confirmPassword}
+                        onChange={(e) => setRegisterForm({ ...registerForm, confirmPassword: e.target.value })}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                aria-label="toggle password visibility"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                edge="end"
+                              >
+                                {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
                       <Button
                         type="submit"
                         fullWidth
                         variant="contained"
-                        size="large"
+                        sx={{ mt: 3, mb: 2, borderRadius: '12px', py: 1.5 }}
                         disabled={isLoading}
-                        sx={{ 
-                          mt: 2, 
-                          mb: 3,
-                          borderRadius: '12px',
-                          py: 1.5,
-                          fontSize: '1.1rem',
-                          fontWeight: 600,
-                        }}
                       >
-                        {isLoading ? <CircularProgress size={24} color="inherit" /> : t('auth.registerButton')}
+                        {isLoading ? <CircularProgress size={24} /> : t('auth.registerButton')}
                       </Button>
-                    </motion.div>
-                    
-                    <Box sx={{ textAlign: 'center' }}>
-                      <Link
-                        component="button"
-                        variant="body2"
-                        onClick={() => setActiveTab(0)}
-                        sx={{ 
-                          textDecoration: 'none',
-                          '&:hover': { textDecoration: 'underline' }
-                        }}
-                      >
-                        {t('auth.switchToLogin')}
-                      </Link>
                     </Box>
-                  </Box>
-                </motion.div>
-              )}
-            </motion.div>
+                  </motion.div>
+                )}
+              </>
+            )}
+            
+            <Divider sx={{ my: 2, width: '100%' }}>{t('auth.or')}</Divider>
+            
+            <Stack direction="row" spacing={1} alignItems="center">
+              <LanguageIcon fontSize="small" />
+              <Button size="small" onClick={() => changeLanguage('en')}>English</Button>
+              <Button size="small" onClick={() => changeLanguage('zh')}>中文</Button>
+            </Stack>
           </Paper>
         </motion.div>
       </Container>
+
+      {/* Forgot Password Dialog */}
+      <Dialog
+        open={showForgotPassword}
+        onClose={() => {
+          setShowForgotPassword(false);
+          setForgotPasswordEmail('');
+          setForgotPasswordMessage('');
+        }}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '16px',
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(20px)',
+          }
+        }}
+      >
+        <DialogTitle sx={{ textAlign: 'center', pb: 1 }}>
+          <Typography variant="h5" fontWeight="bold">
+            忘记密码
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3, textAlign: 'center' }}>
+            请输入您的邮箱地址，我们将向您发送重置密码的链接。请检查您的邮箱（包括垃圾邮件文件夹）。
+          </Typography>
+          <TextField
+            fullWidth
+            label="邮箱地址"
+            type="email"
+            value={forgotPasswordEmail}
+            onChange={(e) => setForgotPasswordEmail(e.target.value)}
+            sx={{ mb: 2 }}
+            disabled={forgotPasswordLoading}
+          />
+          {forgotPasswordMessage && (
+            <Alert 
+              severity={forgotPasswordMessage.includes('已发送') ? 'success' : 'error'}
+              sx={{ mb: 2 }}
+            >
+              {forgotPasswordMessage}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button
+            onClick={() => {
+              setShowForgotPassword(false);
+              setForgotPasswordEmail('');
+              setForgotPasswordMessage('');
+            }}
+            disabled={forgotPasswordLoading}
+          >
+            取消
+          </Button>
+          <Button
+            onClick={handleForgotPassword}
+            variant="contained"
+            disabled={forgotPasswordLoading || !forgotPasswordEmail}
+            sx={{ borderRadius: '8px' }}
+          >
+            {forgotPasswordLoading ? <CircularProgress size={20} /> : '发送重置链接'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

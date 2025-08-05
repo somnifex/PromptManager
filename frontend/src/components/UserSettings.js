@@ -41,8 +41,10 @@ import {
   ExpandLess as ExpandLessIcon,
   Delete as DeleteIcon,
   Key as KeyIcon,
+  QrCode2 as QrCodeIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
+import api from '../api'; // 引入封装的api
 
 function UserSettings() {
   const { t, i18n } = useTranslation();
@@ -87,6 +89,12 @@ function UserSettings() {
     newPassword: '',
     confirmPassword: '',
   });
+  const [twoFactorInfo, setTwoFactorInfo] = useState({
+    qrCode: '',
+    secret: '',
+  });
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [twoFactorDialog, setTwoFactorDialog] = useState(false);
 
   useEffect(() => {
     fetchUserSettings();
@@ -101,51 +109,32 @@ function UserSettings() {
 
   const fetchUserSettings = async () => {
     try {
-      // 这里应该调用真实的API
-      // const response = await fetch('/api/users/settings/', {
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`,
-      //   },
-      // });
-      // const data = await response.json();
-      // setSettings(data);
-      
-      console.log('Fetching user settings...');
+      setLoading(true);
+      const response = await api.get('/users/settings/');
+      setSettings(response.data);
+      setLoading(false);
     } catch (error) {
       console.error('Failed to fetch settings:', error);
+      setLoading(false);
     }
   };
 
   const saveSettings = async () => {
     try {
       setLoading(true);
-      // 这里应该调用真实的API
-      // const response = await fetch('/api/users/settings/', {
-      //   method: 'PUT',
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`,
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(settings),
-      // });
-      
-      console.log('Saving settings:', settings);
+      await api.put('/users/settings/', settings);
       
       // 更新语言设置
       if (settings.language !== i18n.language) {
         i18n.changeLanguage(settings.language);
       }
       
-      setTimeout(() => {
-        setLoading(false);
-        setSaved(true);
-        // 清理之前的定时器
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-        }
-        // 设置新的定时器
-        timeoutRef.current = setTimeout(() => setSaved(false), 3000);
-      }, 1000);
+      setLoading(false);
+      setSaved(true);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      timeoutRef.current = setTimeout(() => setSaved(false), 3000);
     } catch (error) {
       console.error('Failed to save settings:', error);
       setLoading(false);
@@ -175,6 +164,7 @@ function UserSettings() {
     try {
       // 这里应该调用真实的API
       console.log('Changing password...');
+      await api.post('/users/change-password/', passwordForm);
       setPasswordDialog(false);
       setPasswordForm({
         currentPassword: '',
@@ -183,6 +173,41 @@ function UserSettings() {
       });
     } catch (error) {
       console.error('Failed to change password:', error);
+    }
+  };
+
+  const handleTwoFactorSetup = async () => {
+    try {
+      const response = await api.get('/users/two-factor/setup/');
+      setTwoFactorInfo({
+        qrCode: response.data.qr_code,
+        secret: response.data.secret,
+      });
+      setTwoFactorDialog(true);
+    } catch (error) {
+      console.error('Failed to setup 2FA:', error);
+    }
+  };
+
+  const handleTwoFactorEnable = async () => {
+    try {
+      await api.post('/users/two-factor/enable/', { code: twoFactorCode });
+      setTwoFactorDialog(false);
+      fetchUserSettings(); // 重新获取设置
+    } catch (error) {
+      console.error('Failed to enable 2FA:', error);
+      alert(t('settings.security.invalid2FACode'));
+    }
+  };
+
+  const handleTwoFactorDisable = async () => {
+    if (window.confirm(t('settings.security.confirmDisable2FA'))) {
+      try {
+        await api.post('/users/two-factor/disable/');
+        fetchUserSettings(); // 重新获取设置
+      } catch (error) {
+        console.error('Failed to disable 2FA:', error);
+      }
     }
   };
 
@@ -490,9 +515,38 @@ function UserSettings() {
                 }
                 label={t('settings.security.loginNotifications')}
               />
-              <Typography variant="caption" color="text.secondary" display="block">
-                {t('settings.security.loginNotificationsHelp')}
-              </Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <Divider sx={{ my: 1 }} />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Button
+                startIcon={<KeyIcon />}
+                onClick={() => setPasswordDialog(true)}
+                variant="outlined"
+              >
+                {t('settings.security.changePassword')}
+              </Button>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              {settings.two_factor_enabled ? (
+                <Button
+                  startIcon={<SecurityIcon />}
+                  onClick={handleTwoFactorDisable}
+                  variant="contained"
+                  color="error"
+                >
+                  {t('settings.security.disable2FA')}
+                </Button>
+              ) : (
+                <Button
+                  startIcon={<SecurityIcon />}
+                  onClick={handleTwoFactorSetup}
+                  variant="contained"
+                >
+                  {t('settings.security.enable2FA')}
+                </Button>
+              )}
             </Grid>
           </Grid>
         </SettingSection>
@@ -502,39 +556,91 @@ function UserSettings() {
       <Dialog open={passwordDialog} onClose={() => setPasswordDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{t('settings.security.changePassword')}</DialogTitle>
         <DialogContent>
-          <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TextField
-              label={t('settings.security.currentPassword')}
-              type="password"
-              value={passwordForm.currentPassword}
-              onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-              fullWidth
-              required
-            />
-            <TextField
-              label={t('settings.security.newPassword')}
-              type="password"
-              value={passwordForm.newPassword}
-              onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-              fullWidth
-              required
-            />
-            <TextField
-              label={t('settings.security.confirmPassword')}
-              type="password"
-              value={passwordForm.confirmPassword}
-              onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-              fullWidth
-              required
-            />
-          </Box>
+          <TextField
+            autoFocus
+            margin="dense"
+            label={t('settings.security.currentPassword')}
+            type="password"
+            fullWidth
+            variant="standard"
+            value={passwordForm.currentPassword}
+            onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+          />
+          <TextField
+            margin="dense"
+            label={t('settings.security.newPassword')}
+            type="password"
+            fullWidth
+            variant="standard"
+            value={passwordForm.newPassword}
+            onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+          />
+          <TextField
+            margin="dense"
+            label={t('settings.security.confirmPassword')}
+            type="password"
+            fullWidth
+            variant="standard"
+            value={passwordForm.confirmPassword}
+            onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.g.target.value })}
+          />
         </DialogContent>
-        <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setPasswordDialog(false)}>
-            {t('common.cancel')}
-          </Button>
-          <Button variant="contained" onClick={handlePasswordChange}>
-            {t('settings.security.changePassword')}
+        <DialogActions>
+          <Button onClick={() => setPasswordDialog(false)}>{t('common.cancel')}</Button>
+          <Button onClick={handlePasswordChange}>{t('common.save')}</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 2FA Setup Dialog */}
+      <Dialog open={twoFactorDialog} onClose={() => setTwoFactorDialog(false)}>
+        <DialogTitle>{t('settings.security.setup2FATitle')}</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 2 }}>{t('settings.security.setup2FAInstructions')}</Typography>
+          
+          {twoFactorInfo.qrCode ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+              <img 
+                src={twoFactorInfo.qrCode} 
+                alt={t('settings.security.qrCodeAlt')} 
+                style={{ maxWidth: '200px', maxHeight: '200px' }}
+              />
+            </Box>
+          ) : (
+            <Typography sx={{ my: 2, textAlign: 'center', color: 'warning.main' }}>
+              QR码生成失败，请使用下方的密钥手动设置
+            </Typography>
+          )}
+          
+          <Typography sx={{ mb: 2 }}>
+            <strong>{t('settings.security.secretKey')}:</strong>{' '}
+            <Box component="code" sx={{ 
+              backgroundColor: 'grey.100', 
+              p: 1, 
+              borderRadius: 1,
+              display: 'inline-block',
+              fontSize: '0.9em',
+              wordBreak: 'break-all'
+            }}>
+              {twoFactorInfo.secret}
+            </Box>
+          </Typography>
+          
+          <TextField
+            autoFocus
+            margin="dense"
+            label={t('settings.security.verificationCode')}
+            type="text"
+            fullWidth
+            variant="standard"
+            value={twoFactorCode}
+            onChange={(e) => setTwoFactorCode(e.target.value)}
+            placeholder="输入6位验证码"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setTwoFactorDialog(false)}>{t('common.cancel')}</Button>
+          <Button onClick={handleTwoFactorEnable} variant="contained">
+            {t('settings.security.enable')}
           </Button>
         </DialogActions>
       </Dialog>

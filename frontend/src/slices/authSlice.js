@@ -86,6 +86,15 @@ const authSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    setCredentials: (state, action) => {
+      const { user, token } = action.payload;
+      state.user = user;
+      state.token = token;
+      state.error = null;
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      axios.defaults.headers.common['Authorization'] = `Token ${token}`;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -156,5 +165,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, restoreAuth, clearError } = authSlice.actions;
+export const { logout, restoreAuth, clearError, setCredentials } = authSlice.actions;
 export default authSlice.reducer;

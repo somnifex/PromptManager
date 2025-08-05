@@ -2,6 +2,14 @@ from rest_framework import serializers
 from django.contrib.auth import authenticate
 from .models import User
 
+class UserSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'email', 'first_name', 'last_name',
+            'two_factor_enabled'
+        )
+
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     password_confirm = serializers.CharField(write_only=True)
@@ -33,6 +41,33 @@ class UserLoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("Invalid credentials")
         attrs['user'] = user
         return attrs
+
+class TwoFactorSetupSerializer(serializers.Serializer):
+    secret = serializers.CharField(read_only=True)
+    qr_code = serializers.CharField(read_only=True)
+
+class TwoFactorVerifySerializer(serializers.Serializer):
+    code = serializers.CharField(required=True)
+
+    def validate_code(self, value):
+        user = self.context['request'].user
+        if not user.verify_two_factor_code(value):
+            raise serializers.ValidationError("Invalid 2FA code.")
+        return value
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+
+class ResetPasswordSerializer(serializers.Serializer):
+    token = serializers.CharField(required=True)
+    uid = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True, min_length=8)
+    
+    def validate_new_password(self, value):
+        # 可以添加密码强度验证
+        if len(value) < 8:
+            raise serializers.ValidationError("Password must be at least 8 characters long.")
+        return value
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:

@@ -16,6 +16,7 @@ import {
   Chip,
   IconButton,
   Collapse,
+  CircularProgress,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -23,11 +24,11 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   Security as SecurityIcon,
-  Email as EmailIcon,
   Storage as StorageIcon,
   Speed as SpeedIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
+import api from '../../api';
 
 function SystemSettings() {
   const { t } = useTranslation();
@@ -39,14 +40,6 @@ function SystemSettings() {
     siteDescription: 'A powerful prompt management platform',
     maintenanceMode: false,
     allowRegistration: true,
-    
-    // 邮件设置
-    emailEnabled: false,
-    smtpHost: '',
-    smtpPort: 587,
-    smtpUser: '',
-    smtpPassword: '',
-    smtpTLS: true,
     
     // 安全设置
     sessionTimeout: 24,
@@ -73,7 +66,6 @@ function SystemSettings() {
   const [saved, setSaved] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     basic: true,
-    email: false,
     security: false,
     storage: false,
     performance: false,
@@ -93,48 +85,50 @@ function SystemSettings() {
 
   const fetchSettings = async () => {
     try {
-      // 这里应该调用真实的API
-      // const response = await fetch('/api/admin/settings/', {
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`,
-      //   },
-      // });
-      // const data = await response.json();
-      // setSettings(data);
+      setLoading(true);
+      const response = await api.get('/admin/settings/');
       
-      console.log('Fetching system settings...');
+      // 将分类数据转换为扁平结构
+      const flatSettings = {};
+      Object.keys(response.data).forEach(category => {
+        Object.keys(response.data[category]).forEach(key => {
+          flatSettings[key] = response.data[category][key];
+        });
+      });
+      setSettings(prev => ({ ...prev, ...flatSettings }));
+      console.log('设置加载成功:', response.data);
     } catch (error) {
       console.error('Failed to fetch settings:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const saveSettings = async () => {
+    console.log('保存设置按钮被点击');
+    console.log('当前设置:', settings);
+    
     try {
       setLoading(true);
-      // 这里应该调用真实的API
-      // const response = await fetch('/api/admin/settings/', {
-      //   method: 'PUT',
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`,
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(settings),
-      // });
+      const response = await api.put('/admin/settings/', {
+        settings: settings
+      });
       
-      console.log('Saving settings:', settings);
-      
-      setTimeout(() => {
-        setLoading(false);
-        setSaved(true);
-        // 清理之前的定时器
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-        }
-        // 设置新的定时器
-        timeoutRef.current = setTimeout(() => setSaved(false), 3000);
-      }, 1000);
+      console.log('API响应:', response.data);
+      console.log('Settings saved successfully:', response.data);
+      setSaved(true);
+      // 清理之前的定时器
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      // 设置新的定时器
+      timeoutRef.current = setTimeout(() => setSaved(false), 3000);
     } catch (error) {
       console.error('Failed to save settings:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+      }
+    } finally {
       setLoading(false);
     }
   };
@@ -194,10 +188,10 @@ function SystemSettings() {
             {t('admin.settings.refresh')}
           </Button>
           <Button
-            startIcon={<SaveIcon />}
+            startIcon={loading ? <CircularProgress size={16} /> : <SaveIcon />}
             onClick={saveSettings}
             variant="contained"
-            loading={loading}
+            disabled={loading}
             sx={{ borderRadius: '20px' }}
           >
             {t('admin.settings.save')}
@@ -259,65 +253,6 @@ function SystemSettings() {
                   />
                 }
                 label={t('admin.settings.basic.allowRegistration')}
-              />
-            </Grid>
-          </Grid>
-        </SettingSection>
-
-        {/* 邮件设置 */}
-        <SettingSection
-          title={t('admin.settings.email.title')}
-          section="email"
-          icon={<EmailIcon color="primary" />}
-        >
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={settings.emailEnabled}
-                    onChange={(e) => handleSettingChange('emailEnabled', e.target.checked)}
-                  />
-                }
-                label={t('admin.settings.email.enabled')}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                label={t('admin.settings.email.smtpHost')}
-                value={settings.smtpHost}
-                onChange={(e) => handleSettingChange('smtpHost', e.target.value)}
-                fullWidth
-                disabled={!settings.emailEnabled}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                label={t('admin.settings.email.smtpPort')}
-                value={settings.smtpPort}
-                onChange={(e) => handleSettingChange('smtpPort', parseInt(e.target.value) || 587)}
-                type="number"
-                fullWidth
-                disabled={!settings.emailEnabled}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                label={t('admin.settings.email.smtpUser')}
-                value={settings.smtpUser}
-                onChange={(e) => handleSettingChange('smtpUser', e.target.value)}
-                fullWidth
-                disabled={!settings.emailEnabled}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                label={t('admin.settings.email.smtpPassword')}
-                value={settings.smtpPassword}
-                onChange={(e) => handleSettingChange('smtpPassword', e.target.value)}
-                type="password"
-                fullWidth
-                disabled={!settings.emailEnabled}
               />
             </Grid>
           </Grid>

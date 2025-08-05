@@ -4,10 +4,17 @@
 import os
 from .settings import *
 
+# 生产环境必须设置安全的SECRET_KEY
+# 示例: 生成一个新的密钥
+# python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError("生产环境必须设置SECRET_KEY环境变量")
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['*']  # 在实际部署时应该设置为具体的域名
+ALLOWED_HOSTS = ['*']
 
 # 安全设置
 SECURE_BROWSER_XSS_FILTER = True
@@ -16,10 +23,13 @@ X_FRAME_OPTIONS = 'DENY'
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
 # 生产环境的CORS设置
 CORS_ALLOWED_ORIGINS = [
-    "https://yourdomain.com",  # 替换为实际的前端域名
+    "https://yourdomain.com",
 ]
 
 # 数据库设置 - 生产环境建议使用PostgreSQL

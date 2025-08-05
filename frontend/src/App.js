@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { ThemeContextProvider } from './contexts/ThemeContext';
 import { restoreAuth, fetchCurrentUser } from './slices/authSlice';
 import Login from './components/Login';
+import ResetPassword from './components/ResetPassword';
 import Dashboard from './components/Dashboard';
 import PromptForm from './components/PromptForm';
 import PromptDetail from './components/PromptDetail';
@@ -53,6 +54,7 @@ function App() {
       {!token ? (
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       ) : (

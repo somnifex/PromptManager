@@ -17,7 +17,8 @@ class PromptVersionSerializer(serializers.ModelSerializer):
 
 class PromptSerializer(serializers.ModelSerializer):
     author_username = serializers.CharField(source='author.username', read_only=True)
-    versions = PromptVersionSerializer(many=True, read_only=True)
+    # versions = PromptVersionSerializer(many=True, read_only=True)
+    version_count = serializers.SerializerMethodField()
     latest_version = PromptVersionSerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     tag_ids = serializers.PrimaryKeyRelatedField(
@@ -31,9 +32,12 @@ class PromptSerializer(serializers.ModelSerializer):
     class Meta:
         model = Prompt
         fields = ('id', 'title', 'content', 'author_username', 'sharing_mode', 
-                 'is_active', 'created_at', 'updated_at', 'versions', 'latest_version', 
+                 'is_active', 'created_at', 'updated_at', 'version_count', 'latest_version', 
                  'tags', 'tag_ids')
         read_only_fields = ('id', 'created_at', 'updated_at')
+
+    def get_version_count(self, obj):
+        return obj.versions.count()
 
 class PromptCreateSerializer(serializers.ModelSerializer):
     commit_message = serializers.CharField(required=False, allow_blank=True)
