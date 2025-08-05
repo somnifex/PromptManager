@@ -7,9 +7,11 @@ from .settings import *
 # 生产环境必须设置安全的SECRET_KEY
 # 示例: 生成一个新的密钥
 # python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
-SECRET_KEY = os.environ.get('SECRET_KEY')
-if not SECRET_KEY:
-    raise ValueError("生产环境必须设置SECRET_KEY环境变量")
+SECRET_KEY = os.environ.get('SECRET_KEY', 'temp-key-for-collectstatic-only-change-in-production')
+if not SECRET_KEY or SECRET_KEY == 'temp-key-for-collectstatic-only-change-in-production':
+    import sys
+    if 'collectstatic' not in sys.argv:
+        raise ValueError("生产环境必须设置SECRET_KEY环境变量")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
