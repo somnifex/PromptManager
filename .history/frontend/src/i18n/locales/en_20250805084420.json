@@ -1,0 +1,304 @@
+{
+  "nav": {
+    "title": "Prompt Management Platform",
+    "dashboard": "Dashboard",
+    "newPrompt": "New Prompt",
+    "profile": "Profile",
+    "logout": "Logout",
+    "settings": "Settings",
+    "language": "Language",
+    "admin": "Admin Panel"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "username": "Username",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "passwordMismatch": "Passwords do not match",
+    "role": "Role",
+    "loginTitle": "Welcome Back",
+    "loginSubtitle": "Sign in to your account",
+    "registerTitle": "Create Account",
+    "registerSubtitle": "Join our platform",
+    "forgotPassword": "Forgot Password?",
+    "loginButton": "Sign In",
+    "registerButton": "Create Account",
+    "switchToLogin": "Already have an account? Sign in",
+    "switchToRegister": "Don't have an account? Sign up"
+  },
+  "dashboard": {
+    "title": "My Prompts",
+    "subtitle": "Manage your prompt library with version control and team sharing",
+    "noPrompts": "No prompts yet",
+    "noPromptsSubtitle": "Create your first prompt to get started",
+    "createPrompt": "Create Prompt",
+    "searchPlaceholder": "Search prompts...",
+    "filterAll": "All",
+    "filterPrivate": "Private",
+    "filterTeam": "Team",
+    "viewPrompt": "View",
+    "editPrompt": "Edit",
+    "deletePrompt": "Delete",
+    "sharePrompt": "Share",
+    "confirmDelete": "Are you sure you want to delete this prompt?",
+    "author": "By:",
+    "updated": "Updated:",
+    "version": "Version:",
+    "team": "Team",
+    "private": "Private"
+  },
+  "promptForm": {
+    "newPrompt": "Create New Prompt",
+    "editPrompt": "Edit Prompt",
+    "title": "Title",
+    "titlePlaceholder": "Enter prompt title",
+    "titleRequired": "Title is required",
+    "content": "Content",
+    "contentPlaceholder": "Enter your prompt content here...",
+    "contentRequired": "Content is required",
+    "category": "Category",
+    "tags": "Tags",
+    "tagsPlaceholder": "Add tags (press Enter to add)",
+    "sharingMode": "Sharing Mode",
+    "versionNote": "Version Note",
+    "versionNotePlaceholder": "What's new in this version?",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saveSuccess": "Prompt saved successfully",
+    "saveError": "Failed to save prompt"
+  },
+  "promptDetail": {
+    "notFound": "Prompt not found",
+    "history": "History",
+    "versionHistory": "Version History",
+    "restore": "Restore this version",
+    "confirmRestore": "Are you sure you want to restore this version? This will create a new version with the restored content."
+  },
+  "profile": {
+    "title": "User Profile",
+    "editProfile": "Edit Profile",
+    "updateSuccess": "Profile updated successfully",
+    "basicInfo": "Basic Information",
+    "statistics": "Statistics",
+    "email": "Email",
+    "memberSince": "Member Since",
+    "lastLogin": "Last Login",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "bio": "Bio",
+    "bioPlaceholder": "Tell us about yourself...",
+    "verified": "Verified",
+    "roles": {
+      "admin": "Administrator",
+      "user": "User"
+    },
+    "stats": {
+      "promptsCreated": "Prompts Created",
+      "promptsShared": "Prompts Shared",
+      "totalLogins": "Total Logins",
+      "storageUsed": "Storage Used"
+    },
+    "storage": {
+      "title": "Storage Usage",
+      "usage": "Usage",
+      "used": "used"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "refresh": "Refresh",
+    "save": "Save Settings",
+    "saved": "Settings saved successfully",
+    "notifications": {
+      "title": "Notification Settings",
+      "email": "Email Notifications",
+      "push": "Push Notifications",
+      "promptUpdates": "Prompt Updates",
+      "systemUpdates": "System Updates"
+    },
+    "privacy": {
+      "title": "Privacy Settings",
+      "profilePublic": "Public Profile",
+      "profilePublicHelp": "Allow others to view your basic information",
+      "showEmail": "Show Email Address",
+      "showEmailHelp": "Display your email in your profile",
+      "allowIndexing": "Allow Search Engine Indexing",
+      "allowIndexingHelp": "Allow search engines to index your public content"
+    },
+    "interface": {
+      "title": "Interface Settings",
+      "language": "Language",
+      "theme": "Theme",
+      "themes": {
+        "light": "Light",
+        "dark": "Dark",
+        "auto": "Auto"
+      },
+      "compactMode": "Compact Mode",
+      "showPreview": "Show Preview"
+    },
+    "security": {
+      "title": "Security Settings",
+      "password": "Password",
+      "passwordHelp": "Change your password regularly to keep your account secure",
+      "changePassword": "Change Password",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm New Password",
+      "passwordMismatch": "Passwords do not match",
+      "twoFactor": "Two-Factor Authentication",
+      "twoFactorHelp": "Add an extra layer of security to your account",
+      "sessionTimeout": "Session Timeout",
+      "hour": "hour",
+      "hours": "hours",
+      "days": "days",
+      "loginNotifications": "Login Notifications",
+      "loginNotificationsHelp": "Get notified when someone signs in from a new device"
+    }
+  },
+  "admin": {
+    "title": "Admin Dashboard",
+    "refresh": "Refresh",
+    "stats": {
+      "totalUsers": "Total Users",
+      "totalPrompts": "Total Prompts",
+      "activeUsers": "Active Users",
+      "systemHealth": "System Health",
+      "healthy": "Healthy",
+      "warning": "Warning"
+    },
+    "tabs": {
+      "users": "User Management",
+      "system": "System Settings",
+      "monitor": "System Monitor"
+    },
+    "users": {
+      "title": "User Management",
+      "addUser": "Add User",
+      "editUser": "Edit User",
+      "username": "Username",
+      "email": "Email",
+      "name": "Name",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "role": "Role",
+      "status": "Status",
+      "lastLogin": "Last Login",
+      "actions": "Actions",
+      "moreActions": "More Actions",
+      "edit": "Edit",
+      "delete": "Delete",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "active": "Active",
+      "inactive": "Inactive",
+      "never": "Never",
+      "confirmDelete": "Are you sure you want to delete user {{username}}?",
+      "roles": {
+        "admin": "Administrator",
+        "user": "User"
+      }
+    },
+    "settings": {
+      "title": "System Settings",
+      "refresh": "Refresh",
+      "save": "Save Settings",
+      "saved": "Settings saved successfully",
+      "basic": {
+        "title": "Basic Settings",
+        "siteName": "Site Name",
+        "siteDescription": "Site Description",
+        "maintenanceMode": "Maintenance Mode",
+        "allowRegistration": "Allow Registration"
+      },
+      "email": {
+        "title": "Email Settings",
+        "enabled": "Enable Email Service",
+        "smtpHost": "SMTP Host",
+        "smtpPort": "SMTP Port",
+        "smtpUser": "SMTP Username",
+        "smtpPassword": "SMTP Password"
+      },
+      "security": {
+        "title": "Security Settings",
+        "sessionTimeout": "Session Timeout",
+        "hours": "hours",
+        "passwordMinLength": "Minimum Password Length",
+        "requireStrongPassword": "Require Strong Password",
+        "twoFactorEnabled": "Enable Two-Factor Authentication"
+      },
+      "storage": {
+        "title": "Storage Settings",
+        "maxFileSize": "Max File Size",
+        "storageQuota": "Storage Quota",
+        "allowedFileTypes": "Allowed File Types",
+        "fileTypesHelp": "Comma separated, e.g.: txt,md,json"
+      },
+      "performance": {
+        "title": "Performance Settings",
+        "cacheEnabled": "Enable Cache",
+        "cacheTimeout": "Cache Timeout",
+        "seconds": "seconds",
+        "rateLimit": "Rate Limit",
+        "requestsPerHour": "requests/hour"
+      }
+    },
+    "monitor": {
+      "title": "System Monitor",
+      "refresh": "Refresh",
+      "cpu": {
+        "title": "CPU Usage",
+        "cores": "{{count}} cores"
+      },
+      "memory": {
+        "title": "Memory Usage",
+        "total": "Total {{total}} GB"
+      },
+      "disk": {
+        "title": "Disk Usage",
+        "total": "Total {{total}} GB"
+      },
+      "network": {
+        "title": "Network Traffic",
+        "outbound": "Outbound: {{outbound}}"
+      },
+      "systemInfo": {
+        "title": "System Information",
+        "uptime": "Uptime",
+        "processes": "Processes",
+        "loadAverage": "Load Average"
+      },
+      "services": {
+        "title": "Service Status"
+      },
+      "logs": {
+        "title": "Recent Logs",
+        "timestamp": "Timestamp",
+        "level": "Level",
+        "message": "Message"
+      }
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "locale": "en-US"
+  }
+}
